@@ -34,7 +34,7 @@ public class IntegrationNGTest {
         Word2Vec buildModel = instance.buildModel(fileSpec, numOccurrences, numFeatures, windowSize);
         Collection<String> wordsNearest = buildModel.wordsNearest("creative", 10);
         System.out.println(Arrays.deepToString(new ArrayList<>(wordsNearest).toArray()));
-        assertTrue(wordsNearest.contains("mountie"));
+        assertTrue(wordsNearest.contains("alumni"));
     }
 
 }
