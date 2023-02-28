@@ -122,6 +122,7 @@ public class SentenceVectorizerTrainer {
                 .minWordFrequency(numOccurrences)
                 .layerSize(numFeatures)
                 .windowSize(windowSize)
+                .seed(42L)
                 .iterate(iter)
                 .tokenizerFactory(t)
                 .build();

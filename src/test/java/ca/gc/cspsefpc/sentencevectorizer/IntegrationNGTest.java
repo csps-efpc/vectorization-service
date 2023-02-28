@@ -31,8 +31,7 @@ public class IntegrationNGTest {
         SentenceVectorizerTrainer instance = new SentenceVectorizerTrainer();
         Word2Vec buildModel = instance.buildModel(fileSpec, numOccurrences, numFeatures, windowSize);
         Collection<String> wordsNearest = buildModel.wordsNearest("creative", 10);
-        buildModel.getVocab();
-        assertTrue(wordsNearest.contains("principle"));
+        assertTrue(wordsNearest.contains("mountie"));
     }
 
 }
