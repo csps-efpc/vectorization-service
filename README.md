@@ -7,7 +7,7 @@ The vectorization service is a Java 17 application that uses Maven for build and
 2.	Apache Maven -- many IDEs already bundle Maven.
 
 ## Build and Test
-To build and test JNN, ensure that both Java and Maven are installed and on your path, and type:
+To build and test SentenceVectorizer, ensure that both Java and Maven are installed and on your path, and type:
 ```
 mvn clean install
 ``` 
