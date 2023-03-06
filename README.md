@@ -47,7 +47,7 @@ java -jar SentenceVectorizer-1.0-SNAPSHOT-bin.jar service -p 8080 -d "./path/to/
 
 To invoke the API, you can connect to two endpoints:
 ```
-/{locale}/?text=QueryText
+/{locale}/vectorize?text=QueryText
 ```
 Which will yield a JSON array of vectors that embed the meaning of the provided query text. Query text is expected to be a sentence or short phrase.
 
