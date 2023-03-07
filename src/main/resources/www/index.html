@@ -91,11 +91,11 @@
         </div>
 
         <div class="left" style="background-color:#aaa;">
-            <ul>
+            <div>
                 <div><button id="baz" class="panelbutton"><span class="material-icons">extension</span>/list</button></div>
                 <div><button id="foo" class="panelbutton"><span class="material-icons">stars</span>/vectorize</button></div>
                 <div><button id="bar" class="panelbutton"><span class="material-icons">celebration</span>/nearest</button></div>
-            </ul>   
+            </div>   
             <p><a href="https://github.com/csps-efpc/vectorization-service" target="_blank">GitHub</a></p>
         </div>
         <div class="middle" style="" id="start-panel">Select an API endpoint at left to get started.</div>  
@@ -109,6 +109,9 @@
             <div>
                 <label for="vectorize-sentence">sentence</label> :<input id="vectorize-sentence"/>
             </div>
+            <canvas id="vectorize-canvas" width="300" height="300"></canvas>
+            <ul id="vectorize-list">
+            </ul>
         </div>  
         <div class="middle" style="display: none;" id="bar-panel">
             <h1>/{locale}/nearest/{term}</h1>
@@ -132,7 +135,7 @@
         <div class="middle" style="display: none;" id="help-panel">
             <h1>Help</h1>
             <hr/>
-            <p>This user interface exists to enable users to eercise the API. 
+            <p>This user interface exists to enable users to exercise the API. 
                 To start, select an API endpoint at left. Fill out the form; as 
                 you change values, your data will be sent to the endpoint, and 
                 results displayed as they arrive.</p>

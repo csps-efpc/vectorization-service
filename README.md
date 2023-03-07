@@ -45,7 +45,7 @@ java -jar SentenceVectorizer-1.0-SNAPSHOT-bin.jar service -p 8080 -d "./path/to/
 ```
 ...replacing 8080 with the port on which you want to listen for connections, and the value of -d with a path containinig .word2vec files. 
 
-To invoke the API, you can connect to two endpoints:
+To invoke the API, you can connect to three endpoints:
 ```
 /{locale}/vectorize?text=QueryText
 ```
@@ -58,6 +58,11 @@ The second endpoint is:
 Which will yield the ten nearest terms to the provided term as a JSON array.
 
 The first call for a given locale triggers the locale to be loaded. This can take several seconds. Concurrent requests will block until loading is complete, after which calles can be made in parallel.
+
+The third endpoint is :
+```
+/list
+```
 
 Test corpus courtesy of:
 
