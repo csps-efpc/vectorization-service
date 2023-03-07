@@ -26,7 +26,7 @@ import org.deeplearning4j.models.word2vec.Word2Vec;
  * @author JTurner
  */
 public class SentenceVectorizerService {
-
+    
     private static final String FILE_SUFFIX = ".word2vec";
     private final Path embeddingPath;
     private final Map<String, Word2Vec> wordVectors = new HashMap<>();
@@ -45,13 +45,15 @@ public class SentenceVectorizerService {
             throw new InvalidLocaleException();
         }
     }
-
+    
     public SentenceVectorizerService(String embeddingPathSpec, int port) {
         this.embeddingPath = Paths.get(embeddingPathSpec);
         //TODO: preload some models.
         //JavalinConfig config = new JavalinConfig();
         Javalin javalin = Javalin.create();
+
         javalin.get("/list", this::getList);
+
         javalin.get("/{locale}/vectorize", this::getProjection);
         javalin.get("/{locale}/nearest/{term}", this::getNearest);
         javalin.get("/<path>", this::serveStatic);
@@ -73,7 +75,7 @@ public class SentenceVectorizerService {
         ctx.contentType(ContentType.APPLICATION_JSON);
         ctx.result(array.toJson());
     }
-
+    
     public void firstRedirect(Context ctx) {
         ctx.redirect("index.html");
     }
@@ -86,7 +88,9 @@ public class SentenceVectorizerService {
         }
         URL resource = getClass().getResource("/www/" + path);
         if (resource != null) {
+
             ctx.contentType(fileTypeMap.getContentType(resource.getFile()));
+
             try {
                 ctx.result(resource.openStream());
             } catch (IOException ex) {
@@ -107,13 +111,13 @@ public class SentenceVectorizerService {
             JsonArray array = new JsonArray(wordsNearest);
             ctx.contentType(ContentType.APPLICATION_JSON);
             ctx.result(array.toJson());
-
+            
         } else {
             ctx.status(404);
             ctx.result("Unknown term: " + term);
         }
     }
-
+    
     public void getProjection(Context ctx) throws InvalidLocaleException {
         String locale = ctx.pathParam("locale");
         if (ctx.queryParam("text") != null) {
@@ -128,7 +132,7 @@ public class SentenceVectorizerService {
         ctx.status(HttpStatus.BAD_REQUEST);
         ctx.result("Missing 'text' parameter");
     }
-
+    
     private Double[] sentenceToVector(String text, String locale) throws InvalidLocaleException {
         StringTokenizer st = new StringTokenizer(text, " ", false);
         ArrayList<String> words = new ArrayList<>();
@@ -153,13 +157,13 @@ public class SentenceVectorizerService {
         }
         return vectors;
     }
-
+    
     private String normalizeText(String body) {
         return body.replaceAll("[^\\p{L}]+", " ").replaceAll(" +", " ");
     }
-
+    
     private static class InvalidLocaleException extends Exception {
-
+        
         public InvalidLocaleException() {
         }
     }
