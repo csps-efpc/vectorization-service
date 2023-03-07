@@ -52,6 +52,31 @@ function vectorize() {
             node.appendChild(textnode);
             document.getElementById("vectorize-list").appendChild(node);
         });
+        const canvas = document.getElementById("vectorize-canvas");
+        const ctx = canvas.getContext("2d");
+        ctx.reset();
+        ctx.fillStyle = "white";
+        ctx.fillRect(0, 0, 300, 300);
+        var x = (data[0] * 150) + 150;
+        var y = (data[1] * 150) + 150;
+        var r = ((data[2] + 1.0) / 2.0);
+        var g = ((data[3] + 1.0) / 2.0);
+        var b = ((data[4] + 1.0) / 2.0);
+        var s = ((((data[5] + 1.0) / 2.0) * 30.0) + 1);
+        ctx.lineWidth = 2;
+
+        ctx.beginPath();
+        ctx.moveTo(150, 0);
+        ctx.lineTo(150, 300);
+        ctx.moveTo(0, 150);
+        ctx.lineTo(300, 150);
+        ctx.stroke();
+
+        ctx.fillStyle = "rgb(" + (r * 255) + " " + (g * 255) + " " + (b * 255) + ")";
+        ctx.lineWidth = 0;
+        ctx.beginPath();
+        ctx.arc(x, y, s, 0, 2 * Math.PI);
+        ctx.fill();
     });
 }
 
