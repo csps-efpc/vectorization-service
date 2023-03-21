@@ -20,7 +20,7 @@ jobs:
         distribution: 'temurin'
         cache: maven
     - name: Build with Maven
-      run: mvn -B package site shade:shade --file pom.xml
+      run: mvn -Djavacpp.platform=linux-x86_64 -B package site shade:shade --file pom.xml
 
     # The dependency graph upload below blows up GitHub actions. To be reenabled when they fix the service
     # - name: Update dependency graph
