@@ -1,22 +1,28 @@
 package ca.gc.cspsefpc.sentencevectorizer;
 
+import au.com.bytecode.opencsv.CSVReader;
 import com.github.cliftonlabs.json_simple.JsonArray;
 import io.javalin.Javalin;
 import io.javalin.http.ContentType;
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.net.URL;
-import java.net.URLConnection;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.TreeMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.activation.MimetypesFileTypeMap;
 import org.deeplearning4j.models.embeddings.loader.WordVectorSerializer;
 import org.deeplearning4j.models.word2vec.Word2Vec;
@@ -26,7 +32,7 @@ import org.deeplearning4j.models.word2vec.Word2Vec;
  * @author JTurner
  */
 public class SentenceVectorizerService {
-    
+
     private static final String FILE_SUFFIX = ".word2vec";
     private final Path embeddingPath;
     private final Map<String, Word2Vec> wordVectors = new HashMap<>();
@@ -45,7 +51,7 @@ public class SentenceVectorizerService {
             throw new InvalidLocaleException();
         }
     }
-    
+
     public SentenceVectorizerService(String embeddingPathSpec, int port) {
         this.embeddingPath = Paths.get(embeddingPathSpec);
         //TODO: preload some models.
@@ -55,6 +61,7 @@ public class SentenceVectorizerService {
         javalin.get("/list", this::getList);
 
         javalin.get("/{locale}/vectorize", this::getProjection);
+        javalin.get("/{locale}/search", this::search);
         javalin.get("/{locale}/nearest/{term}", this::getNearest);
         javalin.get("/<path>", this::serveStatic);
         javalin.get("/", this::firstRedirect);
@@ -75,7 +82,7 @@ public class SentenceVectorizerService {
         ctx.contentType(ContentType.APPLICATION_JSON);
         ctx.result(array.toJson());
     }
-    
+
     public void firstRedirect(Context ctx) {
         ctx.redirect("index.html");
     }
@@ -111,17 +118,18 @@ public class SentenceVectorizerService {
             JsonArray array = new JsonArray(wordsNearest);
             ctx.contentType(ContentType.APPLICATION_JSON);
             ctx.result(array.toJson());
-            
+
         } else {
             ctx.status(404);
             ctx.result("Unknown term: " + term);
         }
     }
-    
+
     public void getProjection(Context ctx) throws InvalidLocaleException {
         String locale = ctx.pathParam("locale");
-        if (ctx.queryParam("text") != null) {
-            String text = normalizeText(ctx.queryParam("text"));
+        String textParam = ctx.queryParam("text");
+        if (textParam != null) {
+            String text = normalizeText(textParam);
             Double[] vectors = sentenceToVector(text, locale);
             JsonArray array = new JsonArray();
             array.addAll(Arrays.asList(vectors));
@@ -132,7 +140,7 @@ public class SentenceVectorizerService {
         ctx.status(HttpStatus.BAD_REQUEST);
         ctx.result("Missing 'text' parameter");
     }
-    
+
     private Double[] sentenceToVector(String text, String locale) throws InvalidLocaleException {
         StringTokenizer st = new StringTokenizer(text, " ", false);
         ArrayList<String> words = new ArrayList<>();
@@ -157,13 +165,66 @@ public class SentenceVectorizerService {
         }
         return vectors;
     }
-    
+
+    public void search(Context ctx) throws InvalidLocaleException {
+        String term = ctx.queryParam("q");
+        String locale = ctx.pathParam("locale");
+        Word2Vec w2v = getWord2Vec(locale);
+        if (term != null) {
+            String text = normalizeText(term);
+            Double[] vectors = sentenceToVector(text, locale);
+            List<String> closest = getClosestRefsTo(vectors, locale, 10);
+            JsonArray array = new JsonArray();
+            array.addAll(Arrays.asList(closest));
+            ctx.contentType(ContentType.APPLICATION_JSON);
+            ctx.result(array.toJson());
+            return;
+        }
+        ctx.status(HttpStatus.BAD_REQUEST);
+        ctx.result("Missing 'q' parameter");
+    }
+
+    private List<String> getClosestRefsTo(Double[] vectors, String lang, int numResults) {
+        TreeMap<Double, String> returnable = new TreeMap<>();
+        try {
+            CSVReader reader = new CSVReader(new FileReader("./data.csv"));
+            String[] row = reader.readNext(); // Header row.
+            row = reader.readNext(); // Actual first row.
+            while (row != null) {
+                //System.out.println("" + row[1] + "," + row[2]);
+                
+                Double[] rowVector = sentenceToVector(row[2], lang);
+                double similarity = cosineSimilarity(vectors, rowVector);
+                returnable.put(similarity, row[1]);
+                while (returnable.size() > numResults) {
+                    returnable.pollFirstEntry();
+                }
+                row = reader.readNext();
+            }
+        } catch (IOException | InvalidLocaleException ex) {
+            Logger.getLogger(SentenceVectorizerService.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return new ArrayList<>(returnable.values());
+    }
+
+    private double cosineSimilarity(Double[] vectorA, Double[] vectorB) {
+        double dotProduct = 0.0;
+        double normA = 0.0;
+        double normB = 0.0;
+        for (int i = 0; i < vectorA.length; i++) {
+            dotProduct += vectorA[i] * vectorB[i];
+            normA += Math.pow(vectorA[i], 2);
+            normB += Math.pow(vectorB[i], 2);
+        }
+        return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+    }
+
     private String normalizeText(String body) {
         return body.replaceAll("[^\\p{L}]+", " ").replaceAll(" +", " ");
     }
-    
+
     private static class InvalidLocaleException extends Exception {
-        
+
         public InvalidLocaleException() {
         }
     }

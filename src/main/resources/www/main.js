@@ -18,6 +18,12 @@ window.addEventListener("load", function () {
     document.getElementById("nearest-term").addEventListener("input", function () {
         nearest();
     });
+    document.getElementById("search-locale").addEventListener("input", function () {
+        search();
+    });
+    document.getElementById("search-phrase").addEventListener("input", function () {
+        search();
+    });
     fetch("./list").then((response) => response.json()).then((data) => {
         data.forEach(locale => {
             var node = document.createElement("li");
@@ -34,6 +40,11 @@ window.addEventListener("load", function () {
             textnode = document.createTextNode(locale);
             node.appendChild(textnode);
             document.getElementById("nearest-locale").appendChild(node);
+
+            node = document.createElement("option");
+            textnode = document.createTextNode(locale);
+            node.appendChild(textnode);
+            document.getElementById("search-locale").appendChild(node);
 
         });
     });
@@ -92,6 +103,22 @@ function nearest() {
             var textnode = document.createTextNode(term);
             node.appendChild(textnode);
             document.getElementById("nearest-list").appendChild(node);
+        });
+    });
+}
+
+function search() {
+    document.getElementById("search-list").innerHTML = "";
+    var locale = document.getElementById("search-locale").value;
+    var phrase = document.getElementById("search-phrase").value;
+    fetch("./" + locale + "/search?q=" + encodeURIComponent(phrase)).then((response) => response.json()).then((data) => {
+        console.log(data);
+        document.getElementById("search-list").innerHTML = "";
+        data[0].forEach(term => {
+            var node = document.createElement("li");
+            var textnode = document.createTextNode(term);
+            node.appendChild(textnode);
+            document.getElementById("search-list").appendChild(node);
         });
     });
 }
