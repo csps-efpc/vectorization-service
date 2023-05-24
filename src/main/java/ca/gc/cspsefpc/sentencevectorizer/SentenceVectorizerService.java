@@ -36,6 +36,7 @@ public class SentenceVectorizerService {
     private static final String FILE_SUFFIX = ".word2vec";
     private final Path embeddingPath;
     private final Map<String, Word2Vec> wordVectors = new HashMap<>();
+    private final Map<String, Map<String, Double[]>> searchIndexes = new HashMap<>(); // keyed by locale
     private MimetypesFileTypeMap fileTypeMap = new MimetypesFileTypeMap();
 
     private synchronized Word2Vec getWord2Vec(String locale) throws InvalidLocaleException {
@@ -54,7 +55,12 @@ public class SentenceVectorizerService {
 
     public SentenceVectorizerService(String embeddingPathSpec, int port) {
         this.embeddingPath = Paths.get(embeddingPathSpec);
-        //TODO: preload some models.
+        try {
+            //TODO: preload some models.
+            searchIndexes.put("en_ca", preloadSearch("en_ca"));
+        } catch (IOException ex) {
+            Logger.getLogger(SentenceVectorizerService.class.getName()).log(Level.SEVERE, null, ex);
+        }
         //JavalinConfig config = new JavalinConfig();
         Javalin javalin = Javalin.create();
 
@@ -169,7 +175,6 @@ public class SentenceVectorizerService {
     public void search(Context ctx) throws InvalidLocaleException {
         String term = ctx.queryParam("q");
         String locale = ctx.pathParam("locale");
-        Word2Vec w2v = getWord2Vec(locale);
         if (term != null) {
             String text = normalizeText(term);
             Double[] vectors = sentenceToVector(text, locale);
@@ -184,26 +189,26 @@ public class SentenceVectorizerService {
         ctx.result("Missing 'q' parameter");
     }
 
-    private List<String> getClosestRefsTo(Double[] vectors, String lang, int numResults) {
+    private List<String> getClosestRefsTo(Double[] vectors, String lang, int numResults) throws InvalidLocaleException {
         TreeMap<Double, String> returnable = new TreeMap<>();
         try {
-            CSVReader reader = new CSVReader(new FileReader("./data.csv"));
-            String[] row = reader.readNext(); // Header row.
-            row = reader.readNext(); // Actual first row.
-            while (row != null) {
-                //System.out.println("" + row[1] + "," + row[2]);
-                
-                Double[] rowVector = sentenceToVector(row[2], lang);
+            Map<String, Double[]> index = searchIndexes.get(lang);
+            if (index == null) {
+                throw new InvalidLocaleException();
+            }
+            for (Map.Entry<String, Double[]> it : index.entrySet()) {
+                Double[] rowVector = it.getValue();
                 double similarity = cosineSimilarity(vectors, rowVector);
-                returnable.put(similarity, row[1]);
+                returnable.put(similarity, it.getKey());
                 while (returnable.size() > numResults) {
                     returnable.pollFirstEntry();
                 }
-                row = reader.readNext();
             }
-        } catch (IOException | InvalidLocaleException ex) {
+
+        } catch (InvalidLocaleException ex) {
             Logger.getLogger(SentenceVectorizerService.class.getName()).log(Level.SEVERE, null, ex);
         }
+
         return new ArrayList<>(returnable.values());
     }
 
@@ -221,6 +226,26 @@ public class SentenceVectorizerService {
 
     private String normalizeText(String body) {
         return body.replaceAll("[^\\p{L}]+", " ").replaceAll(" +", " ");
+    }
+
+    private Map<String, Double[]> preloadSearch(String lang) throws IOException {
+        TreeMap<String, Double[]> returnable = new TreeMap<>();
+        try {
+            CSVReader reader = new CSVReader(new FileReader("./data.csv"));
+            String[] row = reader.readNext(); // Header row.
+            row = reader.readNext(); // Actual first row.
+            while (row != null) {
+                Double[] rowVector = sentenceToVector(row[2], lang);
+                returnable.put(row[1], rowVector);
+                row = reader.readNext();
+
+            }
+        } catch (FileNotFoundException | InvalidLocaleException ex) {
+            Logger.getLogger(SentenceVectorizerService.class
+                    .getName()).log(Level.SEVERE, null, ex);
+        }
+        return returnable;
+
     }
 
     private static class InvalidLocaleException extends Exception {
