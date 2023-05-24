@@ -95,6 +95,7 @@
                 <div><button id="baz" class="panelbutton"><span class="material-icons">extension</span>/list</button></div>
                 <div><button id="foo" class="panelbutton"><span class="material-icons">stars</span>/vectorize</button></div>
                 <div><button id="bar" class="panelbutton"><span class="material-icons">celebration</span>/nearest</button></div>
+                <div><button id="pom" class="panelbutton"><span class="material-icons">search</span>/search</button></div>
             </div>   
             <p><a href="https://github.com/csps-efpc/vectorization-service" target="_blank">GitHub</a></p>
         </div>
@@ -126,7 +127,21 @@
             <hr/>
             <ul id="nearest-list">
             </ul>
-        </div>  
+        </div> 
+        <div class="middle" style="display: none;" id="pom-panel">
+            <h1>/{locale}/search/q={phrase}</h1>
+            <hr/>
+            <div>
+                <label for="nearest-locale">locale</label>: <select id="search-locale">
+                </select>
+            </div>
+            <div>
+                <label for="nearest-term">phrase</label> :<input id="search-phrase"/>
+            </div>
+            <hr/>
+            <ul id="search-list">
+            </ul>
+        </div> 
         <div class="middle" style="display: none;" id="baz-panel">
             <h1>/list</h1>
             <hr/>
