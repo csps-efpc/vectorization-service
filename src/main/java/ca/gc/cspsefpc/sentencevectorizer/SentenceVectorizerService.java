@@ -55,12 +55,13 @@ public class SentenceVectorizerService {
 
     public SentenceVectorizerService(String embeddingPathSpec, int port) {
         this.embeddingPath = Paths.get(embeddingPathSpec);
-        try {
-            //TODO: preload some models.
-            searchIndexes.put("en_ca", preloadSearch("en_ca"));
-        } catch (IOException ex) {
-            Logger.getLogger(SentenceVectorizerService.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        Arrays.asList("en_ca", "fr_ca").forEach(lang -> {
+            try {
+                searchIndexes.put(lang, preloadSearch(lang));
+            } catch (InvalidLocaleException | IOException ex) {
+                Logger.getLogger(SentenceVectorizerService.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        });
         //JavalinConfig config = new JavalinConfig();
         Javalin javalin = Javalin.create();
 
@@ -228,17 +229,28 @@ public class SentenceVectorizerService {
         return body.replaceAll("[^\\p{L}]+", " ").replaceAll(" +", " ");
     }
 
-    private Map<String, Double[]> preloadSearch(String lang) throws IOException {
+    private Map<String, Double[]> preloadSearch(String lang) throws IOException, InvalidLocaleException {
+        int descriptionIndex;
+        switch (lang) {
+            case "en_ca" ->
+                descriptionIndex = 3;
+            case "fr_ca" ->
+                descriptionIndex = 7;
+            default ->
+                throw new InvalidLocaleException();
+        }
+
         TreeMap<String, Double[]> returnable = new TreeMap<>();
         try {
             CSVReader reader = new CSVReader(new FileReader("./data.csv"));
             String[] row = reader.readNext(); // Header row.
             row = reader.readNext(); // Actual first row.
             while (row != null) {
-                Double[] rowVector = sentenceToVector(row[2], lang);
-                returnable.put(row[1], rowVector);
+                if (row[descriptionIndex] != null && !row[descriptionIndex].isBlank()) {
+                    Double[] rowVector = sentenceToVector(row[descriptionIndex], lang);
+                    returnable.put(row[0], rowVector);
+                }
                 row = reader.readNext();
-
             }
         } catch (FileNotFoundException | InvalidLocaleException ex) {
             Logger.getLogger(SentenceVectorizerService.class
